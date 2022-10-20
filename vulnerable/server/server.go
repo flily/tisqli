@@ -4,11 +4,21 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"runtime"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 )
+
+func CallerSignature() string {
+	_, file, line, ok := runtime.Caller(2)
+	if ok {
+		return fmt.Sprintf("%s:%d", file, line)
+	}
+
+	return ""
+}
 
 type SQLInjectionServer struct {
 	Database *sql.DB
@@ -33,6 +43,9 @@ func (s *SQLInjectionServer) Init() error {
 }
 
 func (s *SQLInjectionServer) RunSQL(base string, args ...interface{}) (*sql.Rows, error) {
+	caller := CallerSignature()
+	log.Printf("caller on %s", caller)
+
 	sql := fmt.Sprintf(base, args...)
 	log.Printf("SQL: %s", sql)
 	return s.Database.Query(sql)
