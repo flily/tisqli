@@ -6,7 +6,7 @@ func Parse(sql string) ([]*Node, []error, error) {
 	parser := parser.New()
 	nodes, warns, err := parser.Parse(sql, "", "")
 	if err != nil {
-		return nil, warns, err
+		return nil, warns, NewParserError(sql, err)
 	}
 
 	result := make([]*Node, len(nodes))

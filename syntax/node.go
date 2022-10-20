@@ -2,6 +2,7 @@ package syntax
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/pingcap/tidb/parser/ast"
 	driver "github.com/pingcap/tidb/types/parser_driver"
@@ -67,7 +68,6 @@ func (n *Node) Verify() {
 }
 
 func (n *Node) Info() string {
-
 	switch a := n.Node.(type) {
 	case *ast.ColumnName:
 		return a.Name.O
@@ -120,4 +120,24 @@ func (n *Node) PrintTree(level int, lead string, last bool) {
 			child.PrintTree(level+1, lead+"| ", nextLast)
 		}
 	}
+}
+
+func (n *Node) TypeEqual(other *Node) bool {
+	typeMe := reflect.TypeOf(n.Node)
+	typeOther := reflect.TypeOf(other.Node)
+	if typeMe != typeOther {
+		return false
+	}
+
+	if len(n.Children) != len(other.Children) {
+		return false
+	}
+
+	for i, child := range n.Children {
+		if !child.TypeEqual(other.Children[i]) {
+			return false
+		}
+	}
+
+	return true
 }
