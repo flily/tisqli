@@ -17,18 +17,18 @@ type cliConfig struct {
 }
 
 func doPartial(payload string, conf *cliConfig) (*PartialResult, time.Duration) {
-	time_start := time.Now()
+	timeStart := time.Now()
 	checker := DefaultPartialChecker()
 	result := checker.Check(payload)
-	time_end := time.Now()
-	time_elapsed := time_end.Sub(time_start)
+	timeFinish := time.Now()
+	timeDuration := timeFinish.Sub(timeStart)
 
 	if conf.FilterPositives && result.IsInjection() {
-		return result, time_elapsed
+		return result, timeDuration
 	}
 
 	if conf.FilterNegatives && !result.IsInjection() {
-		return result, time_elapsed
+		return result, timeDuration
 	}
 
 	fmt.Printf("[ %5v ] %s\n", result.IsInjection(), payload)
@@ -48,7 +48,7 @@ func doPartial(payload string, conf *cliConfig) (*PartialResult, time.Duration) 
 		}
 	}
 
-	return result, time_elapsed
+	return result, timeDuration
 }
 
 func Main(set *flag.FlagSet, args []string) {
@@ -61,7 +61,7 @@ func Main(set *flag.FlagSet, args []string) {
 
 	reader := bufio.NewReader(os.Stdin)
 	detected, all := 0, 0
-	total_times := time.Duration(0)
+	totalTime := time.Duration(0)
 
 	stat, _ := os.Stdin.Stat()
 	istty := (stat.Mode() & os.ModeCharDevice) != 0
@@ -96,7 +96,7 @@ func Main(set *flag.FlagSet, args []string) {
 					tc[t.Template]++
 				}
 			}
-			total_times += duration
+			totalTime += duration
 		}
 
 		if result {
@@ -107,7 +107,7 @@ func Main(set *flag.FlagSet, args []string) {
 	fmt.Printf("Detected: %d/%d  %8f%%  avg=%s\n",
 		detected, all,
 		100*float64(detected)/float64(all),
-		total_times/time.Duration(all),
+		totalTime/time.Duration(all),
 	)
 
 	for t, c := range tc {
