@@ -22,6 +22,28 @@ func (t PartialSQLTemplate) Build(input string) string {
 	return fmt.Sprintf(t.Template, input)
 }
 
+var (
+	colourCorrect = color.New(
+		color.BgGreen,
+	)
+
+	colourInjected = color.New(
+		color.BgRed,
+	)
+
+	colourTerminated = color.New(
+		color.BgYellow,
+	)
+)
+
+const (
+	PartialCheckReasonOK             = "ok"
+	PartialCheckReasonModified       = "AST modified"
+	PartialCheckReasonTemplateError  = "template error"
+	PartialCheckReasonSyntaxError    = "syntax error"
+	PartialCheckReasonMoreStatements = "none or multiple SQls"
+)
+
 // PartialSQLCheckResult is the result of partial SQL injection checking
 type PartialSQLCheckResult struct {
 	IsInjection bool
@@ -39,23 +61,16 @@ func (r *PartialSQLCheckResult) SQL() string {
 
 func (r *PartialSQLCheckResult) SQLInColour() string {
 	if !r.IsInjection {
-		payload := color.New(
-			color.BgGreen,
-		).Sprintf(r.Payload)
+		payload := colourCorrect.Sprintf(r.Payload)
 		return fmt.Sprintf(r.Template, payload)
 	}
 
-	partInjected := color.New(
-		color.BgRed,
-	)
-
-	payload := partInjected.Sprintf(r.Payload)
+	payload := colourInjected.Sprintf(r.Payload)
 
 	if i := strings.Index(r.Payload, "\x00"); i >= 0 {
-		payloadAffected := partInjected.Sprintf(r.Payload[:i])
+		payloadAffected := colourInjected.Sprintf(r.Payload[:i])
 
-		partTerminated := color.New(color.BgYellow)
-		payloadTerminated := partTerminated.Sprintf(r.Payload[i:])
+		payloadTerminated := colourTerminated.Sprintf(r.Payload[i:])
 		payload = payloadAffected + payloadTerminated
 	}
 
@@ -72,7 +87,7 @@ func (t PartialSQLTemplate) Check(payload string) *PartialSQLCheckResult {
 	parser := syntax.NewParser()
 	astCorrect, _, err := parser.Parse(t.Correct())
 	if err != nil {
-		result.Reason = "template error"
+		result.Reason = PartialCheckReasonTemplateError
 		result.Err = err
 		return result
 	}
@@ -81,7 +96,7 @@ func (t PartialSQLTemplate) Check(payload string) *PartialSQLCheckResult {
 	result.Payload = payload
 	astPartial, _, err := parser.Parse(t.Build(payload))
 	if err != nil {
-		result.Reason = "syntax error"
+		result.Reason = PartialCheckReasonSyntaxError
 		result.Err = err
 		return result
 	}
@@ -89,16 +104,17 @@ func (t PartialSQLTemplate) Check(payload string) *PartialSQLCheckResult {
 	result.AstPartial = astPartial
 	if len(astPartial) != 1 {
 		result.IsInjection = true
-		result.Reason = "none or multiple SQls"
+		result.Reason = PartialCheckReasonMoreStatements
 		return result
 	}
 
 	if !astCorrect[0].TypeEqual(astPartial[0]) {
 		result.IsInjection = true
-		result.Reason = "AST modified"
+		result.Reason = PartialCheckReasonModified
 		return result
 	}
 
+	result.Reason = PartialCheckReasonOK
 	return result
 }
 
