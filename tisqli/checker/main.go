@@ -10,10 +10,23 @@ import (
 )
 
 func doPartial(payload string, isDebug bool) bool {
-	result := OnPartial(payload)
+	checker := DefaultPartialChecker()
+	result := checker.Check(payload)
 	fmt.Printf("[ %5v ] %s\n", result.IsInjection(), payload)
 	for _, t := range result.Results {
-		fmt.Printf("  - %s\n", t.SQLInColour())
+		fmt.Printf("  - [%s] %s\n", t.Reason, t.SQLInColour())
+
+		if isDebug {
+			fmt.Printf("%s\n", t.Err)
+
+			for _, a := range t.AstCorrect {
+				a.PrintTree(0, "", true)
+			}
+
+			for _, a := range t.AstPartial {
+				a.PrintTree(0, "", true)
+			}
+		}
 	}
 
 	return result.IsInjection()
@@ -22,6 +35,7 @@ func doPartial(payload string, isDebug bool) bool {
 func Main(set *flag.FlagSet, args []string) {
 	isFull := set.Bool("full", false, "check for full SQL statements")
 	isDebug := set.Bool("debug", false, "debug mode")
+	_ = set.Parse(args)
 
 	reader := bufio.NewReader(os.Stdin)
 	detected, all := 0, 0
@@ -42,7 +56,7 @@ func Main(set *flag.FlagSet, args []string) {
 			panic(err)
 		}
 
-		payload := strings.TrimSpace(string(line))
+		payload := string(line)
 		if len(payload) <= 0 || strings.Index(payload, "#") == 0 {
 			continue
 		}

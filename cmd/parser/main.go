@@ -24,9 +24,11 @@ func main() {
 			panic(err)
 		}
 
-		nodes, warns, err := syntax.Parse(string(line))
+		parser := syntax.NewParser()
+		nodes, warns, err := parser.Parse(string(line))
 		if err != nil {
-			fmt.Printf("parse error: %s\n", err)
+			fmt.Printf("parse error\n")
+			fmt.Printf("%s\n", err)
 			continue
 		}
 

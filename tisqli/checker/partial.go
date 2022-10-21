@@ -2,21 +2,22 @@ package checker
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/flily/tisqli/syntax"
 )
 
-type partialSQLTemplate struct {
+type PartialSQLTemplate struct {
 	Template       string
 	CorrectPayload string
 }
 
-func (t partialSQLTemplate) Correct() string {
+func (t PartialSQLTemplate) Correct() string {
 	return fmt.Sprintf(t.Template, t.CorrectPayload)
 }
 
-func (t partialSQLTemplate) Build(input string) string {
+func (t PartialSQLTemplate) Build(input string) string {
 	return fmt.Sprintf(t.Template, input)
 }
 
@@ -26,6 +27,8 @@ type PartialSQLCheckResult struct {
 	Payload     string
 	Reason      string
 	Err         error
+	AstCorrect  []*syntax.Node
+	AstPartial  []*syntax.Node
 }
 
 func (r *PartialSQLCheckResult) SQL() string {
@@ -33,43 +36,56 @@ func (r *PartialSQLCheckResult) SQL() string {
 }
 
 func (r *PartialSQLCheckResult) SQLInColour() string {
-	var c *color.Color
-	if r.IsInjection {
-		c = color.New(
-			color.FgYellow,
-			color.BgRed,
-		)
-	} else {
-		c = color.New(
+	if !r.IsInjection {
+		payload := color.New(
 			color.FgYellow,
 			color.BgGreen,
-		)
+		).Sprintf(r.Payload)
+		return fmt.Sprintf(r.Template, payload)
 	}
 
-	payload := c.Sprint(r.Payload)
+	partInjected := color.New(
+		color.FgYellow,
+		color.BgRed,
+	)
+
+	payload := partInjected.Sprintf(r.Payload)
+
+	if i := strings.Index(r.Payload, "\x00"); i >= 0 {
+		payloadAffected := partInjected.Sprintf(r.Payload[:i])
+
+		partTerminated := color.New(color.BgYellow)
+		payloadTerminated := partTerminated.Sprintf(r.Payload[i:])
+		payload = payloadAffected + payloadTerminated
+	}
+
 	return fmt.Sprintf(r.Template, payload)
 }
 
-func (t partialSQLTemplate) Check(payload string) *PartialSQLCheckResult {
+func (t PartialSQLTemplate) Check(payload string) *PartialSQLCheckResult {
 	result := &PartialSQLCheckResult{
 		Template: t.Template,
 		Payload:  t.CorrectPayload,
 	}
-	astCorrect, _, err := syntax.Parse(t.Correct())
+
+	parser := syntax.NewParser()
+	astCorrect, _, err := parser.Parse(t.Correct())
 	if err != nil {
 		result.Reason = "template error"
 		result.Err = err
 		return result
 	}
 
+	result.AstCorrect = astCorrect
 	result.Payload = payload
-	astPartial, _, err := syntax.Parse(t.Build(payload))
+	astPartial, _, err := parser.Parse(t.Build(payload))
 	if err != nil {
 		result.Reason = "syntax error"
 		result.Err = err
 		return result
 	}
 
+	result.AstPartial = astPartial
 	if len(astPartial) != 1 {
 		result.IsInjection = true
 		result.Reason = "none or multiple SQls"
@@ -99,19 +115,41 @@ func (r *PartialResult) IsInjection() bool {
 	return false
 }
 
-var sqlTemplates = []partialSQLTemplate{
+var sqlTemplates = []PartialSQLTemplate{
 	{"SELECT * FROM users WHERE id = %s AND name = 'lorem'", "42"},
 	{"SELECT * FROM users WHERE id = 42 AND name = '%s'", "ipsum"},
+	{"SELECT * FROM users WHERE id = 42 AND name = \"%s\"", "ipsum"},
 }
 
-func OnPartial(part string) *PartialResult {
-	templateList := sqlTemplates
+type PartialChecker struct {
+	Templates []PartialSQLTemplate
+	Decoder   *Decoder
+}
+
+func NewPartialChecker(templates []PartialSQLTemplate, decoder *Decoder) *PartialChecker {
+	c := &PartialChecker{
+		Templates: templates,
+		Decoder:   decoder,
+	}
+	return c
+}
+
+func DefaultPartialChecker() *PartialChecker {
+	decoder := DefaultDecoders()
+	return NewPartialChecker(sqlTemplates, decoder)
+}
+
+func (c *PartialChecker) Check(raw string) *PartialResult {
+	payload := raw
+	if c.Decoder != nil {
+		payload = c.Decoder.Decode(raw)
+	}
 
 	result := &PartialResult{
-		Results: make([]PartialSQLCheckResult, len(templateList)),
+		Results: make([]PartialSQLCheckResult, len(c.Templates)),
 	}
-	for i, template := range templateList {
-		r := template.Check(part)
+	for i, template := range c.Templates {
+		r := template.Check(payload)
 		result.Results[i] = *r
 	}
 

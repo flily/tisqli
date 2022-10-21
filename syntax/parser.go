@@ -1,10 +1,28 @@
 package syntax
 
-import "github.com/pingcap/tidb/parser"
+import (
+	"github.com/pingcap/tidb/parser"
+)
 
-func Parse(sql string) ([]*Node, []error, error) {
-	parser := parser.New()
-	nodes, warns, err := parser.Parse(sql, "", "")
+type Parser struct {
+	parser       *parser.Parser
+	StripCString bool
+}
+
+func NewParser() *Parser {
+	p := &Parser{
+		parser:       parser.New(),
+		StripCString: true,
+	}
+	return p
+}
+
+func (p *Parser) Parse(sql string) ([]*Node, []error, error) {
+	if p.StripCString {
+		sql = CStringStrip(sql)
+	}
+
+	nodes, warns, err := p.parser.Parse(sql, "", "")
 	if err != nil {
 		return nil, warns, NewParserError(sql, err)
 	}
