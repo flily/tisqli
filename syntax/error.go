@@ -25,7 +25,7 @@ func parseInt(str string) int {
 
 var regexParserError = regexp.MustCompile(`line (\d+) column (\d+)`)
 
-// ParseParserError parse error message of TiDB parser error, with SQL statement and hint.
+// NewParserError parse error message of TiDB parser error, with SQL statement and hint.
 func NewParserError(sql string, err error) error {
 	results := regexParserError.FindStringSubmatch(err.Error())
 	if results == nil {

@@ -8,6 +8,7 @@ import (
 	driver "github.com/pingcap/tidb/types/parser_driver"
 )
 
+// Node is a wrap for ast.Node, add pointers to parent and children
 type Node struct {
 	ast.Node
 
