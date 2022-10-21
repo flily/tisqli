@@ -8,6 +8,7 @@ import (
 	"github.com/flily/tisqli/syntax"
 )
 
+// PartialSQLTemplate is a template for partial SQL injection checking.
 type PartialSQLTemplate struct {
 	Template       string
 	CorrectPayload string
@@ -21,6 +22,7 @@ func (t PartialSQLTemplate) Build(input string) string {
 	return fmt.Sprintf(t.Template, input)
 }
 
+// PartialSQLCheckResult is the result of partial SQL injection checking
 type PartialSQLCheckResult struct {
 	IsInjection bool
 	Template    string
@@ -60,6 +62,7 @@ func (r *PartialSQLCheckResult) SQLInColour() string {
 	return fmt.Sprintf(r.Template, payload)
 }
 
+// Check checks if the payload is a SQL injection. Payload MUST BE raw SQL text.
 func (t PartialSQLTemplate) Check(payload string) *PartialSQLCheckResult {
 	result := &PartialSQLCheckResult{
 		Template: t.Template,
@@ -103,6 +106,7 @@ type PartialResult struct {
 	Results []PartialSQLCheckResult
 }
 
+// Is a SQL injection, at least one template is a SQL injection.
 func (r *PartialResult) IsInjection() bool {
 	for _, result := range r.Results {
 		if result.IsInjection {
@@ -136,6 +140,7 @@ type PartialChecker struct {
 	Decoder   *Decoder
 }
 
+// Create a checker for partial SQL, with custom templates and decoders.
 func NewPartialChecker(templates []PartialSQLTemplate, decoder *Decoder) *PartialChecker {
 	c := &PartialChecker{
 		Templates: templates,
@@ -144,11 +149,13 @@ func NewPartialChecker(templates []PartialSQLTemplate, decoder *Decoder) *Partia
 	return c
 }
 
+// Create a checker for partial SQL, with default templates and decoders.
 func DefaultPartialChecker() *PartialChecker {
 	decoder := DefaultDecoders()
 	return NewPartialChecker(sqlTemplates, decoder)
 }
 
+// Check checks if the payload is a SQL injection. Payload CAN BE encoded, and will be decoded before checking.
 func (c *PartialChecker) Check(raw string) *PartialResult {
 	payload := raw
 	if c.Decoder != nil {
