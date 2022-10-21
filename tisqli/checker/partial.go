@@ -38,14 +38,12 @@ func (r *PartialSQLCheckResult) SQL() string {
 func (r *PartialSQLCheckResult) SQLInColour() string {
 	if !r.IsInjection {
 		payload := color.New(
-			color.FgYellow,
 			color.BgGreen,
 		).Sprintf(r.Payload)
 		return fmt.Sprintf(r.Template, payload)
 	}
 
 	partInjected := color.New(
-		color.FgYellow,
 		color.BgRed,
 	)
 
@@ -117,8 +115,20 @@ func (r *PartialResult) IsInjection() bool {
 
 var sqlTemplates = []PartialSQLTemplate{
 	{"SELECT * FROM users WHERE id = %s AND name = 'lorem'", "42"},
+	{"SELECT * FROM users WHERE (id = %s) AND name = 'lorem'", "42"},
+	{"SELECT * FROM users WHERE ((id = %s)) AND name = 'lorem'", "42"},
+	{"SELECT * FROM users WHERE (((id = %s))) AND name = 'lorem'", "42"},
 	{"SELECT * FROM users WHERE id = 42 AND name = '%s'", "ipsum"},
+	{"SELECT * FROM users WHERE id = 42 AND (name = '%s')", "ipsum"},
+	{"SELECT * FROM users WHERE id = 42 AND ((name = '%s'))", "ipsum"},
+	{"SELECT * FROM users WHERE id = 42 AND (((name = '%s')))", "ipsum"},
 	{"SELECT * FROM users WHERE id = 42 AND name = \"%s\"", "ipsum"},
+	{"SELECT * FROM users WHERE id = 42 AND (name = \"%s\")", "ipsum"},
+	{"SELECT * FROM users WHERE id = 42 AND ((name = \"%s\"))", "ipsum"},
+	{"SELECT * FROM users WHERE id = 42 AND (((name = \"%s\")))", "ipsum"},
+	{"SELECT * FROM %s WHERE id = 42 AND name = 'ipsum'", "users"},
+	{"SELECT * FROM user JOIN college ON user.id = %s WHERE user.name = 'lorem'", "42"},
+	{"SELECT * FROM user JOIN college ON user.name = '%s' WHERE user.name = 'lorem'", "lorem"},
 }
 
 type PartialChecker struct {

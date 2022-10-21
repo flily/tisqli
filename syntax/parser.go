@@ -14,6 +14,7 @@ func NewParser() *Parser {
 		parser:       parser.New(),
 		StripCString: true,
 	}
+
 	return p
 }
 

@@ -7,16 +7,35 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
-func doPartial(payload string, isDebug bool) bool {
+type cliConfig struct {
+	IsDebug         bool
+	FilterPositives bool
+	FilterNegatives bool
+}
+
+func doPartial(payload string, conf *cliConfig) (bool, time.Duration) {
+	time_start := time.Now()
 	checker := DefaultPartialChecker()
 	result := checker.Check(payload)
+	time_end := time.Now()
+	time_elapsed := time_end.Sub(time_start)
+
+	if conf.FilterPositives && result.IsInjection() {
+		return true, time_elapsed
+	}
+
+	if conf.FilterNegatives && !result.IsInjection() {
+		return false, time_elapsed
+	}
+
 	fmt.Printf("[ %5v ] %s\n", result.IsInjection(), payload)
 	for _, t := range result.Results {
 		fmt.Printf("  - [%s] %s\n", t.Reason, t.SQLInColour())
 
-		if isDebug {
+		if conf.IsDebug {
 			fmt.Printf("%s\n", t.Err)
 
 			for _, a := range t.AstCorrect {
@@ -29,16 +48,21 @@ func doPartial(payload string, isDebug bool) bool {
 		}
 	}
 
-	return result.IsInjection()
+	return result.IsInjection(), time_elapsed
 }
 
 func Main(set *flag.FlagSet, args []string) {
+	conf := &cliConfig{}
 	isFull := set.Bool("full", false, "check for full SQL statements")
-	isDebug := set.Bool("debug", false, "debug mode")
+	set.BoolVar(&conf.IsDebug, "debug", false, "debug mode")
+	set.BoolVar(&conf.FilterPositives, "negative", false, "filter positives")
+	set.BoolVar(&conf.FilterNegatives, "positive", false, "filter negatives")
 	_ = set.Parse(args)
 
 	reader := bufio.NewReader(os.Stdin)
 	detected, all := 0, 0
+	total_times := time.Duration(0)
+
 	stat, _ := os.Stdin.Stat()
 	istty := (stat.Mode() & os.ModeCharDevice) != 0
 
@@ -64,7 +88,9 @@ func Main(set *flag.FlagSet, args []string) {
 		all++
 		result := false
 		if !*isFull {
-			result = doPartial(payload, *isDebug)
+			var duration time.Duration
+			result, duration = doPartial(payload, conf)
+			total_times += duration
 		}
 
 		if result {
@@ -72,5 +98,9 @@ func Main(set *flag.FlagSet, args []string) {
 		}
 	}
 
-	fmt.Printf("Detected: %d/%d  %8f%%\n", detected, all, 100*float64(detected)/float64(all))
+	fmt.Printf("Detected: %d/%d  %8f%%  avg=%s\n",
+		detected, all,
+		100*float64(detected)/float64(all),
+		total_times/time.Duration(all),
+	)
 }
