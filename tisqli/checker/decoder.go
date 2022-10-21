@@ -4,11 +4,7 @@ import (
 	"net/url"
 )
 
-const (
-	DecodeNothing   = 0x00
-	DecodeURLEncode = 0x01
-)
-
+// URLDecode decodes a string in URL encoding.
 func URLDecode(s string) string {
 	if result, err := url.QueryUnescape(s); err == nil {
 		return result
@@ -16,10 +12,12 @@ func URLDecode(s string) string {
 	return s
 }
 
+// Decoder is a chain of decoders for SQL statements.
 type Decoder struct {
 	Decoders []func(string) string
 }
 
+// NewDecoder creates a new decoder with the given decoders.
 func NewDecoder(decoder ...func(string) string) *Decoder {
 	d := &Decoder{
 		Decoders: decoder,
@@ -38,6 +36,7 @@ func (d *Decoder) Decode(s string) string {
 	return s
 }
 
+// DefaultDecoders returns the default decoders, with URLDecode.
 func DefaultDecoders() *Decoder {
 	return NewDecoder(
 		URLDecode,

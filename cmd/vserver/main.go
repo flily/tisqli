@@ -1,5 +1,7 @@
 package main
 
+// vserver is a simple HTTP server provider vulnerable APIs for testing
+
 import (
 	"flag"
 	"os"

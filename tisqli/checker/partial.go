@@ -106,7 +106,7 @@ type PartialResult struct {
 	Results []PartialSQLCheckResult
 }
 
-// Is a SQL injection, at least one template is a SQL injection.
+// IsInjection Is a SQL injection, at least one template is a SQL injection.
 func (r *PartialResult) IsInjection() bool {
 	for _, result := range r.Results {
 		if result.IsInjection {
@@ -140,7 +140,7 @@ type PartialChecker struct {
 	Decoder   *Decoder
 }
 
-// Create a checker for partial SQL, with custom templates and decoders.
+// NewPartialChecker Create a checker for partial SQL, with custom templates and decoders.
 func NewPartialChecker(templates []PartialSQLTemplate, decoder *Decoder) *PartialChecker {
 	c := &PartialChecker{
 		Templates: templates,
@@ -149,7 +149,7 @@ func NewPartialChecker(templates []PartialSQLTemplate, decoder *Decoder) *Partia
 	return c
 }
 
-// Create a checker for partial SQL, with default templates and decoders.
+// DefaultPartialChecker Create a checker for partial SQL, with default templates and decoders.
 func DefaultPartialChecker() *PartialChecker {
 	decoder := DefaultDecoders()
 	return NewPartialChecker(sqlTemplates, decoder)
