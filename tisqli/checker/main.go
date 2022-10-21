@@ -16,7 +16,7 @@ type cliConfig struct {
 	FilterNegatives bool
 }
 
-func doPartial(payload string, conf *cliConfig) (bool, time.Duration) {
+func doPartial(payload string, conf *cliConfig) (*PartialResult, time.Duration) {
 	time_start := time.Now()
 	checker := DefaultPartialChecker()
 	result := checker.Check(payload)
@@ -24,11 +24,11 @@ func doPartial(payload string, conf *cliConfig) (bool, time.Duration) {
 	time_elapsed := time_end.Sub(time_start)
 
 	if conf.FilterPositives && result.IsInjection() {
-		return true, time_elapsed
+		return result, time_elapsed
 	}
 
 	if conf.FilterNegatives && !result.IsInjection() {
-		return false, time_elapsed
+		return result, time_elapsed
 	}
 
 	fmt.Printf("[ %5v ] %s\n", result.IsInjection(), payload)
@@ -48,7 +48,7 @@ func doPartial(payload string, conf *cliConfig) (bool, time.Duration) {
 		}
 	}
 
-	return result.IsInjection(), time_elapsed
+	return result, time_elapsed
 }
 
 func Main(set *flag.FlagSet, args []string) {
@@ -65,6 +65,7 @@ func Main(set *flag.FlagSet, args []string) {
 
 	stat, _ := os.Stdin.Stat()
 	istty := (stat.Mode() & os.ModeCharDevice) != 0
+	tc := map[string]int{}
 
 	for {
 		if istty {
@@ -88,8 +89,13 @@ func Main(set *flag.FlagSet, args []string) {
 		all++
 		result := false
 		if !*isFull {
-			var duration time.Duration
-			result, duration = doPartial(payload, conf)
+			r, duration := doPartial(payload, conf)
+			result = r.IsInjection()
+			for _, t := range r.Results {
+				if t.IsInjection {
+					tc[t.Template]++
+				}
+			}
 			total_times += duration
 		}
 
@@ -103,4 +109,8 @@ func Main(set *flag.FlagSet, args []string) {
 		100*float64(detected)/float64(all),
 		total_times/time.Duration(all),
 	)
+
+	for t, c := range tc {
+		fmt.Printf("[ %6d ] %s\n", c, t)
+	}
 }
