@@ -173,10 +173,7 @@ func DefaultPartialChecker() *PartialChecker {
 
 // Check checks if the payload is a SQL injection. Payload CAN BE encoded, and will be decoded before checking.
 func (c *PartialChecker) Check(raw string) *PartialResult {
-	payload := raw
-	if c.Decoder != nil {
-		payload = c.Decoder.Decode(raw)
-	}
+	payload := c.Decoder.Decode(raw)
 
 	result := &PartialResult{
 		Results: make([]PartialSQLCheckResult, len(c.Templates)),

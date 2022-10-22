@@ -50,9 +50,9 @@ func (n *Node) AllChildrenConstant() bool {
 	return true
 }
 
-func (n *Node) Verify() {
+func (n *Node) VerifyConstant() {
 	for _, child := range n.Children {
-		child.Verify()
+		child.VerifyConstant()
 	}
 
 	if n.AllChildrenConstant() {
@@ -62,9 +62,6 @@ func (n *Node) Verify() {
 	switch n.Node.(type) {
 	case *driver.ValueExpr:
 		n.IsConstant = true
-
-	default:
-		n.IsConstant = false
 	}
 }
 

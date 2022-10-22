@@ -39,7 +39,7 @@ func main() {
 		fmt.Printf("%d SQLs found\n", len(nodes))
 		fmt.Printf("%s\n", strings.Repeat("-", 80))
 		for _, node := range nodes {
-			node.Verify()
+			node.VerifyConstant()
 			node.PrintTree(0, "", true)
 			fmt.Printf("%s\n", strings.Repeat("-", 80))
 		}

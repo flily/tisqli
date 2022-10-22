@@ -53,6 +53,30 @@ func doPartial(payload string, conf *cliConfig) (*checker.PartialResult, time.Du
 	return result, timeDuration
 }
 
+func doFull(payload string, conf *cliConfig) (*checker.FullResult, time.Duration) {
+	timeStart := time.Now()
+	timeFinish := time.Now()
+	timeDuration := timeFinish.Sub(timeStart)
+
+	checker := checker.DefaultFullChecker()
+	result := checker.Check(payload)
+
+	if conf.FilterPositives && result.IsInjection() {
+		return result, timeDuration
+	}
+
+	if conf.FilterNegatives && !result.IsInjection() {
+		return result, timeDuration
+	}
+
+	fmt.Printf("[ %5v ] %s %s\n", result.IsInjection(), result.Reason, payload)
+	for _, elem := range result.Elements {
+		fmt.Printf("  - [%s] %s\n", elem.Reason, elem.Text)
+	}
+
+	return result, timeDuration
+}
+
 func main() {
 	conf := &cliConfig{}
 	isFull := flag.Bool("full", false, "check for full SQL statements")
@@ -90,16 +114,24 @@ func main() {
 
 		all++
 		result := false
-		if !*isFull {
-			r, duration := doPartial(payload, conf)
+		var duration time.Duration
+		if *isFull {
+			var r *checker.FullResult
+			r, duration = doFull(payload, conf)
+			result = r.IsInjection()
+
+		} else {
+			var r *checker.PartialResult
+			r, duration = doPartial(payload, conf)
 			result = r.IsInjection()
 			for _, t := range r.Results {
 				if t.IsInjection {
 					tc[t.Template]++
 				}
 			}
-			totalTime += duration
 		}
+
+		totalTime += duration
 
 		if result {
 			detected++
