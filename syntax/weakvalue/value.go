@@ -29,4 +29,7 @@ type WeakValue interface {
 
 	Unary(opcode.Op) WeakValue
 	Binary(opcode.Op, WeakValue) WeakValue
+
+	Add(WeakValue) WeakValue
+	Sub(WeakValue) WeakValue
 }
