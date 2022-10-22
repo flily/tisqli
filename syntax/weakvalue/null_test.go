@@ -39,3 +39,57 @@ func TestWeakNull(t *testing.T) {
 		t.Errorf("w.AsString() = %v, want %v", v, "null")
 	}
 }
+
+func TestNullAdd(t *testing.T) {
+	null := NewNull()
+
+	oprands := []WeakValue{
+		NewNull(),
+		NewFalse(),
+		NewTrue(),
+		NewInteger(0),
+		NewInteger(42),
+		NewFloat(0.0),
+		NewFloat(3.14),
+		NewString(""),
+		NewString("lorem ipsum"),
+	}
+
+	for _, oprand := range oprands {
+		r := null.Add(oprand)
+		if r.Type() != ValueNull {
+			t.Errorf("r.Type() = %v, want %v", r.Type(), ValueNull)
+		}
+
+		if r.IsNull() != true {
+			t.Errorf("r.IsNull() = %v, want %v", r.IsNull(), true)
+		}
+	}
+}
+
+func TestNullSub(t *testing.T) {
+	null := NewNull()
+
+	oprands := []WeakValue{
+		NewNull(),
+		NewFalse(),
+		NewTrue(),
+		NewInteger(0),
+		NewInteger(42),
+		NewFloat(0.0),
+		NewFloat(3.14),
+		NewString(""),
+		NewString("lorem ipsum"),
+	}
+
+	for _, oprand := range oprands {
+		r := null.Sub(oprand)
+		if r.Type() != ValueNull {
+			t.Errorf("r.Type() = %v, want %v", r.Type(), ValueNull)
+		}
+
+		if r.IsNull() != true {
+			t.Errorf("r.IsNull() = %v, want %v", r.IsNull(), true)
+		}
+	}
+}

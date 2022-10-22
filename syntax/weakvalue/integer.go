@@ -68,9 +68,17 @@ func (w *WeakInteger) AsString() string {
 }
 
 func (w *WeakInteger) Unary(op opcode.Op) WeakValue {
-	return nil
+	return genericUnary(op, w)
 }
 
 func (w *WeakInteger) Binary(op opcode.Op, v WeakValue) WeakValue {
-	return nil
+	return genericBinary(op, w, v)
+}
+
+func (w *WeakInteger) Add(v WeakValue) WeakValue {
+	return genericAdd(w, v)
+}
+
+func (w *WeakInteger) Sub(v WeakValue) WeakValue {
+	return genericSub(w, v)
 }

@@ -75,3 +75,199 @@ func TestWeakFloat(t *testing.T) {
 		}
 	}
 }
+
+func TestFloatAddNull(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewNull()
+	c := a.Add(b)
+
+	if c.Type() != ValueNull {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueNull)
+	}
+
+	if !c.IsNull() {
+		t.Errorf("c.IsNull() = %v, want %v", c.IsNull(), true)
+	}
+}
+
+func TestFloatAddInteger(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewInteger(42)
+	c := a.Add(b)
+
+	if c.Type() != ValueFloat {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+	}
+
+	expected := 45.1415926
+	if c.AsFloat() != expected {
+		t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+	}
+}
+
+func TestFloatAddUint(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewUint(42)
+	c := a.Add(b)
+
+	if c.Type() != ValueFloat {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+	}
+
+	expected := 45.1415926
+	if c.AsFloat() != expected {
+		t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+	}
+}
+
+func TestFloatAddFloat(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewFloat(42.0)
+	c := a.Add(b)
+
+	if c.Type() != ValueFloat {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+	}
+
+	expected := 45.1415926
+	if c.AsFloat() != expected {
+		t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+	}
+}
+
+func TestFloatAddRegularString(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewString("lorem ipsum")
+	c := a.Add(b)
+
+	if c.Type() != ValueFloat {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+	}
+
+	expected := 3.1415926
+	if c.AsFloat() != expected {
+		t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+	}
+}
+
+func TestFloatAddNumberString(t *testing.T) {
+	a := NewFloat(3.1415926)
+
+	{
+		b := NewString("42")
+		c := a.Add(b)
+
+		if c.Type() != ValueFloat {
+			t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+		}
+
+		expected := 45.1415926
+		if c.AsFloat() != expected {
+			t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+		}
+	}
+
+	{
+		b := NewString("2.71828")
+		c := a.Add(b)
+
+		if c.Type() != ValueFloat {
+			t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+		}
+
+		expected := 5.8598726
+		if c.AsFloat() != expected {
+			t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+		}
+	}
+}
+
+func TestFloatSubNull(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewNull()
+	c := a.Sub(b)
+
+	if c.Type() != ValueNull {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueNull)
+	}
+
+	if !c.IsNull() {
+		t.Errorf("c.IsNull() = %v, want %v", c.IsNull(), true)
+	}
+}
+
+func TestFloatSubInteger(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewInteger(42)
+	c := a.Sub(b)
+
+	if c.Type() != ValueFloat {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+	}
+
+	expected := -38.8584074
+	if c.AsFloat() != expected {
+		t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+	}
+}
+
+func TestFloatSubUint(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewUint(42)
+	c := a.Sub(b)
+
+	if c.Type() != ValueFloat {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+	}
+
+	expected := -38.8584074
+	if c.AsFloat() != expected {
+		t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+	}
+}
+
+func TestFloatSubFloat(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewFloat(42.0)
+	c := a.Sub(b)
+
+	if c.Type() != ValueFloat {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+	}
+
+	expected := -38.8584074
+	if c.AsFloat() != expected {
+		t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+	}
+}
+
+func TestFloatSubRegularString(t *testing.T) {
+	a := NewFloat(3.1415926)
+	b := NewString("lorem ipsum")
+	c := a.Sub(b)
+
+	if c.Type() != ValueFloat {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+	}
+
+	expected := 3.1415926
+	if c.AsFloat() != expected {
+		t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+	}
+}
+
+func TestFloatSubNumberString(t *testing.T) {
+	a := NewFloat(3.1415926)
+
+	b := NewString("42")
+	c := a.Sub(b)
+
+	if c.Type() != ValueFloat {
+		t.Errorf("c.Type() = %v, want %v", c.Type(), ValueFloat)
+	}
+
+	expected := -38.8584074
+	if c.AsFloat() != expected {
+		t.Errorf("c.AsFloat() = %v, want %v", c.AsFloat(), expected)
+	}
+}

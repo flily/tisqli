@@ -54,9 +54,17 @@ func (w *WeakFloat) AsString() string {
 }
 
 func (w *WeakFloat) Unary(op opcode.Op) WeakValue {
-	return nil
+	return genericUnary(op, w)
 }
 
 func (w *WeakFloat) Binary(op opcode.Op, v WeakValue) WeakValue {
-	return nil
+	return genericBinary(op, w, v)
+}
+
+func (w *WeakFloat) Add(v WeakValue) WeakValue {
+	return genericAdd(w, v)
+}
+
+func (w *WeakFloat) Sub(v WeakValue) WeakValue {
+	return genericSub(w, v)
 }

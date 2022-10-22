@@ -6,57 +6,65 @@ import (
 	"github.com/pingcap/tidb/parser/opcode"
 )
 
-type Uint struct {
+type WeakUint struct {
 	Value uint64
 }
 
 func NewUint(u uint64) WeakValue {
-	w := &Uint{
+	w := &WeakUint{
 		Value: u,
 	}
 	return w
 }
 
-func (w *Uint) Type() Type {
+func (w *WeakUint) Type() Type {
 	return ValueUint
 }
 
-func (w *Uint) EqualTo(v WeakValue) bool {
+func (w *WeakUint) EqualTo(v WeakValue) bool {
 	return w.Value == v.AsUint()
 }
 
-func (w *Uint) String() string {
+func (w *WeakUint) String() string {
 	return fmt.Sprintf("%d", w.Value)
 }
 
-func (w *Uint) IsNull() bool {
+func (w *WeakUint) IsNull() bool {
 	return false
 }
 
-func (w *Uint) AsBoolean() bool {
+func (w *WeakUint) AsBoolean() bool {
 	return w.Value != 0
 }
 
-func (w *Uint) AsInteger() int64 {
+func (w *WeakUint) AsInteger() int64 {
 	return int64(w.Value)
 }
 
-func (w *Uint) AsUint() uint64 {
+func (w *WeakUint) AsUint() uint64 {
 	return w.Value
 }
 
-func (w *Uint) AsFloat() float64 {
+func (w *WeakUint) AsFloat() float64 {
 	return float64(w.Value)
 }
 
-func (w *Uint) AsString() string {
+func (w *WeakUint) AsString() string {
 	return fmt.Sprintf("%d", w.Value)
 }
 
-func (w *Uint) Unary(op opcode.Op) WeakValue {
-	return nil
+func (w *WeakUint) Unary(op opcode.Op) WeakValue {
+	return genericUnary(op, w)
 }
 
-func (w *Uint) Binary(op opcode.Op, v WeakValue) WeakValue {
-	return nil
+func (w *WeakUint) Binary(op opcode.Op, v WeakValue) WeakValue {
+	return genericBinary(op, w, v)
+}
+
+func (w *WeakUint) Add(v WeakValue) WeakValue {
+	return genericAdd(w, v)
+}
+
+func (w *WeakUint) Sub(v WeakValue) WeakValue {
+	return genericSub(w, v)
 }
