@@ -6,12 +6,12 @@ import (
 )
 
 const (
-	FullCheckReasonOK                 = "ok"
-	FullCheckReasonModified           = "AST modified"
-	FullCheckMoreStatements           = "none or multiple SQls"
-	FullCheckSyntaxError              = "syntax error"
-	FullCheckConstantBinaryExpression = "constant binary expression"
-	FullCheckConstantSelectStatement  = "constant select statement"
+	FullCheckReasonOK                       = "ok"
+	FullCheckReasonModified                 = "AST modified"
+	FullCheckReasonMoreStatements           = "none or multiple SQls"
+	FullCheckReasonSyntaxError              = "syntax error"
+	FullCheckReasonConstantBinaryExpression = "constant binary expression"
+	FullCheckReasonConstantSelectStatement  = "constant select statement"
 )
 
 type FullElementResult struct {
@@ -20,12 +20,17 @@ type FullElementResult struct {
 }
 
 type FullResult struct {
-	Err      error
-	Reason   string
-	Elements []FullElementResult
+	Err                     error
+	Reason                  string
+	Elements                []FullElementResult
+	AllowMultipleStatements bool
 }
 
 func (r *FullResult) IsInjection() bool {
+	if r.Reason == FullCheckReasonMoreStatements && !r.AllowMultipleStatements {
+		return true
+	}
+
 	return len(r.Elements) > 0
 }
 
@@ -57,10 +62,10 @@ func fullWalkNode(node *syntax.Node, result *FullResult) {
 	element := &FullElementResult{}
 	switch node.Node.(type) {
 	case *ast.BinaryOperationExpr:
-		element.Reason = FullCheckConstantBinaryExpression
+		element.Reason = FullCheckReasonConstantBinaryExpression
 
 	case *ast.SelectStmt:
-		element.Reason = FullCheckConstantSelectStatement
+		element.Reason = FullCheckReasonConstantSelectStatement
 	}
 
 	if len(element.Reason) > 0 {
@@ -81,13 +86,13 @@ func (c *FullChecker) Check(raw string) *FullResult {
 	parser := syntax.NewParser()
 	nodes, _, err := parser.Parse(sql)
 	if err != nil {
-		result.Reason = FullCheckSyntaxError
+		result.Reason = FullCheckReasonSyntaxError
 		result.Err = err
 		return result
 	}
 
 	if len(nodes) != 1 {
-		result.Reason = FullCheckMoreStatements
+		result.Reason = FullCheckReasonMoreStatements
 		return result
 	}
 

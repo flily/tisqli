@@ -13,15 +13,16 @@ import (
 )
 
 type cliConfig struct {
-	IsDebug         bool
-	FilterPositives bool
-	FilterNegatives bool
+	IsDebug            bool
+	FilterPositives    bool
+	FilterNegatives    bool
+	MultipleStatements bool
 }
 
 func doPartial(payload string, conf *cliConfig) (*checker.PartialResult, time.Duration) {
 	timeStart := time.Now()
-	checker := checker.DefaultPartialChecker()
-	result := checker.Check(payload)
+	ch := checker.DefaultPartialChecker()
+	result := ch.Check(payload)
 	timeFinish := time.Now()
 	timeDuration := timeFinish.Sub(timeStart)
 
@@ -58,8 +59,11 @@ func doFull(payload string, conf *cliConfig) (*checker.FullResult, time.Duration
 	timeFinish := time.Now()
 	timeDuration := timeFinish.Sub(timeStart)
 
-	checker := checker.DefaultFullChecker()
-	result := checker.Check(payload)
+	ch := checker.DefaultFullChecker()
+	result := ch.Check(payload)
+	if conf.MultipleStatements {
+		result.AllowMultipleStatements = true
+	}
 
 	if conf.FilterPositives && result.IsInjection() {
 		return result, timeDuration
@@ -83,6 +87,7 @@ func main() {
 	flag.BoolVar(&conf.IsDebug, "debug", false, "debug mode")
 	flag.BoolVar(&conf.FilterPositives, "negative", false, "filter positives")
 	flag.BoolVar(&conf.FilterNegatives, "positive", false, "filter negatives")
+	flag.BoolVar(&conf.MultipleStatements, "multiple", false, "allow multiple statements")
 	flag.Parse()
 
 	reader := bufio.NewReader(os.Stdin)
