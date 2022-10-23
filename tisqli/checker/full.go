@@ -1,9 +1,6 @@
 package checker
 
 import (
-	"bytes"
-	"io"
-
 	"github.com/flily/tisqli/syntax"
 	"github.com/pingcap/tidb/parser/ast"
 )
@@ -46,12 +43,6 @@ func NewFullChecker(decoder *Decoder) *FullChecker {
 func DefaultFullChecker() *FullChecker {
 	decoder := NewDecoder()
 	return NewFullChecker(decoder)
-}
-
-func readText(formatter interface{ Format(io.Writer) }) string {
-	var buf bytes.Buffer
-	formatter.Format(&buf)
-	return buf.String()
 }
 
 func fullWalkNode(node *syntax.Node, result *FullResult) {
