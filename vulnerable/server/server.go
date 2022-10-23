@@ -21,7 +21,9 @@ func CallerSignature() string {
 }
 
 type SQLInjectionServer struct {
-	Database *sql.DB
+	Database       *sql.DB
+	ProtectPartial bool
+	ProtectFull    bool
 }
 
 func (s *SQLInjectionServer) Init() error {
@@ -42,12 +44,41 @@ func (s *SQLInjectionServer) Init() error {
 	return nil
 }
 
+func (s *SQLInjectionServer) MakeHandler(handler func(c *gin.Context) (*Response, error)) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if s.ProtectPartial {
+			isInjection := CheckParametersForInjection(c)
+			if isInjection {
+				errorResponse(c, 403, "SQL Injection detected")
+				return
+			}
+		}
+
+		response, err := handler(c)
+		if err != nil {
+			log.Printf("Error: %v", err)
+			errorResponse(c, 400, "bad request", err.Error())
+			return
+		}
+
+		c.JSON(response.Code, response)
+	}
+}
+
 func (s *SQLInjectionServer) RunSQL(base string, args ...interface{}) (*sql.Rows, error) {
 	caller := CallerSignature()
 	log.Printf("caller on %s", caller)
 
 	sql := fmt.Sprintf(base, args...)
 	log.Printf("SQL: %s", sql)
+
+	if s.ProtectFull {
+		if CheckFullSQLForInjection(sql) {
+			log.Printf("REJECTED: %s", sql)
+			panic(SQLInjectionMessage)
+		}
+	}
+
 	return s.Database.Query(sql)
 }
 
@@ -196,21 +227,23 @@ func (s *SQLInjectionServer) Serve(port int) error {
 	engine.GET("/user/:id", MakeHandler(s.GetUser))
 	engine.DELETE("/user/:id", MakeHandler(s.DeleteUser))
 
-	engine.GET("/user-query", MakeHandler(s.UserQuery))
+	engine.GET("/user-query", s.MakeHandler(s.UserQuery))
 
 	address := fmt.Sprintf(":%d", port)
 	fmt.Printf("server is listening on %s\n", address)
 	return engine.Run(address)
 }
 
-func NewServer(dsn string) (*SQLInjectionServer, error) {
+func NewServer(dsn string, protectPartial bool, protectFull bool) (*SQLInjectionServer, error) {
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
 
 	server := &SQLInjectionServer{
-		Database: db,
+		Database:       db,
+		ProtectPartial: protectPartial,
+		ProtectFull:    protectFull,
 	}
 
 	return server, nil

@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/flily/tisqli/tisqli/checker"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	SQLInjectionMessage = "SQL Injection detected"
 )
 
 type Response struct {
@@ -39,8 +44,16 @@ func DefaultHandlerFatal(c *gin.Context) {
 		}
 
 		if info := recover(); info != nil {
-			response.Details = append(response.Details, fmt.Sprintf("%v", info))
-			c.JSON(500, response)
+			if info == SQLInjectionMessage {
+				response.Code = 403
+				response.Message = SQLInjectionMessage
+				response.Details = nil
+				c.JSON(403, response)
+
+			} else {
+				response.Details = append(response.Details, fmt.Sprintf("%v", info))
+				c.JSON(500, response)
+			}
 		}
 
 	}(c)
@@ -89,4 +102,33 @@ func MakeHandler(handler func(c *gin.Context) (*Response, error)) gin.HandlerFun
 
 		c.JSON(response.Code, response)
 	}
+}
+
+func CheckParametersForInjection(c *gin.Context) bool {
+	ch := checker.DefaultPartialChecker()
+	ch.Decoder = nil
+
+	found := false
+	for _, value := range c.Request.URL.Query() {
+		for _, v := range value {
+			r := ch.Check(v)
+			if r.IsInjection() {
+				log.Printf("Injection detected: %s", v)
+				found = true
+			}
+		}
+	}
+
+	return found
+}
+
+func CheckFullSQLForInjection(sql string) bool {
+	ch := checker.DefaultFullChecker()
+
+	r := ch.Check(sql)
+	if r.Reason == checker.FullCheckReasonSyntaxError {
+		return true
+	}
+
+	return r.IsInjection()
 }
