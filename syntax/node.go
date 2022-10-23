@@ -62,6 +62,11 @@ func (n *Node) VerifyConstant() {
 	switch n.Node.(type) {
 	case *driver.ValueExpr:
 		n.IsConstant = true
+
+	case *ast.FuncCallExpr:
+		if len(n.Children) <= 0 {
+			n.IsConstant = true
+		}
 	}
 }
 
